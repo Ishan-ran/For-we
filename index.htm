@@ -4,84 +4,188 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>The Infinite Verse</title>
+  
+  <!-- Load Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@400;700;800&display=swap" rel="stylesheet">
+  <!-- Load Lottie Library from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.7.13/lottie.min.js"></script>
 
   <style>
     :root {
-      --blue-m: #1e40af; --blue-l: #60a5fa;
-      --red-m: #991b1b; --red-l: #f87171;
-      --purple-m: #581c87; --purple-l: #c084fc;
+      /* --- PALETTE: RED, BLUE, PURPLE, BLACK --- */
+      --deep-black: #000000;
+      /* Removed --glass-black as it's no longer used for the poem box */
+      
+      /* Vibrant shades for accents */
+      --neon-blue: #60a5fa;
+      --neon-purple: #c084fc;
+      --neon-red: #f87171;
+      
+      /* Gradient for the reel text */
+      --sunset-gradient: linear-gradient(to bottom, var(--neon-blue), var(--neon-purple), var(--neon-red));
     }
 
     * { box-sizing: border-box; }
-    body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; color: white; font-family: 'Poppins', sans-serif; overflow: hidden; }
-
-    /* --- Loading Screen --- */
-    #loader {
-      position: fixed; inset: 0; background: black; z-index: 2000;
-      display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center;
+    
+    body, html { 
+      margin: 0; padding: 0; height: 100%; width: 100%; 
+      background: transparent; 
+      /* Base text color: Pale Blue for readability */
+      color: #e0f2fe; 
+      font-family: 'Poppins', sans-serif; 
+      overflow: hidden; cursor: crosshair; 
     }
-    .loader-text {
-      font-family: 'Great Vibes', cursive; font-size: clamp(1.5rem, 4vw, 2.5rem);
-      max-width: 800px; line-height: 1.6; opacity: 0; display: none;
+
+    /* --- Video Background --- */
+    #bgVideo {
+      position: fixed; top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0; object-fit: cover; pointer-events: none;
+      opacity: 0; transition: opacity 2s ease-in;
+      background: radial-gradient(circle at center, #1e1b4b 0%, #000000 100%);
+    }
+
+    /* --- Error Notification --- */
+    #errorMsg {
+      position: fixed; bottom: 20px; right: 20px;
+      background: rgba(255, 0, 0, 0.8); color: white;
+      padding: 10px 20px; border-radius: 5px;
+      display: none; z-index: 5000; font-size: 12px;
+      pointer-events: none;
+    }
+
+    /* --- Loader --- */
+    #loader {
+      position: fixed; inset: 0; background: var(--deep-black); z-index: 2000;
+      display: flex; align-items: center; justify-content: center; 
+      flex-direction: column; text-align: center; padding: 40px;
     }
     #beginBtn { 
-      padding: 15px 40px; background: white; color: black; border: none; 
-      cursor: pointer; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; 
+      padding: 15px 40px; 
+      background: transparent; 
+      color: var(--neon-blue); 
+      border: 2px solid var(--neon-purple); 
+      cursor: pointer; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
+      transition: all 0.3s;
+      box-shadow: 0 0 15px rgba(192, 132, 252, 0.2);
     }
-
-    @keyframes cinematicFade {
-      0% { opacity: 0; transform: translateY(20px); color: var(--blue-l); }
-      20% { opacity: 1; transform: translateY(0); }
-      40% { color: var(--red-l); }
-      70% { color: var(--purple-l); opacity: 1; }
-      100% { opacity: 0; transform: translateY(-20px); }
+    #beginBtn:hover { 
+      background: var(--neon-purple); 
+      color: black;
+      box-shadow: 0 0 30px var(--neon-purple);
+      transform: scale(1.05); 
     }
-
-    /* --- Background --- */
-    .bg {
-      position: fixed; inset: 0; z-index: -1;
-      background: radial-gradient(circle at 50% 50%, #1e1b4b, #450a0a, #2e1065);
-      background-size: 400% 400%; animation: drift 60s ease infinite;
-    }
-    @keyframes drift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
     
+    .loader-text {
+      font-family: 'Great Vibes', cursive; font-size: clamp(1.4rem, 4vw, 2.5rem);
+      max-width: 900px; line-height: 1.6; opacity: 0; display: none;
+      text-shadow: 0 2px 4px black;
+    }
+    @keyframes cinematicFade {
+      0% { opacity: 0; transform: translateY(20px); color: var(--neon-blue); }
+      20% { opacity: 1; transform: translateY(0); }
+      40% { color: var(--neon-red); }
+      70% { color: var(--neon-purple); opacity: 1; }
+      100% { opacity: 0; transform: translateY(-20px); visibility: hidden; }
+    }
+
     /* --- Layout --- */
-    .main { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: 2s; }
+    .main { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: 2s; position: relative; z-index: 1;}
+    
     .left { 
-      width: 40%; height: 100%; border-right: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(50px);
+      width: 40%; height: 100%; 
+      background: transparent; 
       display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 20px;
     }
-    .right { width: 60%; display: flex; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+    .right { 
+      width: 60%; height: 100%; display: flex; align-items: center; justify-content: center; 
+      padding: 40px 60px; text-align: center; overflow-y: auto;
+      background: transparent;
+    }
 
-    /* --- Jackpot --- */
-    .jackpot-box {
-      width: 100%; height: 300px; overflow: hidden; position: relative;
-      mask-image: linear-gradient(transparent, black, transparent);
-      -webkit-mask-image: linear-gradient(transparent, black, transparent);
+    /* --- Reel & Text Visibility --- */
+    .jackpot-box { 
+      width: 100%; height: 350px; overflow: hidden; position: relative; 
+      background: transparent;
+      /* Masking ensures it fades out top/bottom cleanly */
+      mask-image: linear-gradient(transparent, black 20%, black 80%, transparent); 
+      -webkit-mask-image: linear-gradient(transparent, black 20%, black 80%, transparent); 
     }
-    .reel { position: absolute; width: 100%; top: 0; transition: transform 6s cubic-bezier(0.45, 0.05, 0.2, 1); }
+    .reel { position: absolute; width: 100%; top: 0; left: 0; will-change: transform; }
+    
     .item { 
-      height: 60px; display: flex; align-items: center; justify-content: center;
-      color: black; font-weight: 800; text-transform: uppercase; letter-spacing: 6px; 
+      height: 70px; display: flex; align-items: center; justify-content: center; 
+      font-weight: 800; text-transform: uppercase; letter-spacing: 4px; 
+      font-size: 14px; 
+      /* Gradient text */
+      background: var(--sunset-gradient);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      /* STRONG shadow to make text visible over any background */
+      filter: drop-shadow(0px 2px 0px rgba(0,0,0,1));
     }
+    
+    .shuffle-wrapper { position: relative; margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    
     .btn { 
-      margin-top: 30px; padding: 15px 30px; background: black; color: white; 
-      border: 1px solid white; cursor: pointer; letter-spacing: 2px;
+      padding: 12px 25px; 
+      background: rgba(0, 0, 0, 0.5); /* Semi-transparent black button bg */
+      color: var(--neon-blue); 
+      border: 1px solid var(--neon-purple); 
+      cursor: pointer; letter-spacing: 2px; transition: 0.25s; text-transform: uppercase; 
+      font-size: 11px; font-weight: bold; 
+      backdrop-filter: blur(4px);
+    }
+    .btn:hover { 
+      background: var(--neon-red); 
+      color: black; 
+      border-color: var(--neon-red);
+      box-shadow: 0 0 15px var(--neon-red);
     }
 
-    /* --- Result --- */
+    #redButterflyContainer { 
+      position: absolute; width: 130px; height: 130px; bottom: -65px; right: -65px; 
+      pointer-events: none; z-index: 10; opacity: 0; transition: opacity 1s; 
+    }
+    
+    #blueFollowerContainer { 
+      position: fixed; width: 110px; height: 110px; z-index: 9999; pointer-events: none; 
+      top: 0; left: 0; will-change: transform; opacity: 0; transition: opacity 2s; 
+    }
+
+    .controls { display:flex; gap:10px; margin-top:10px;}
+
+    /* --- Poem Output (The Main Event) --- */
     .poem-out {
-      font-family: 'Great Vibes', cursive; font-size: 3rem; opacity: 0; transition: 1s;
-      background: linear-gradient(to right, var(--blue-m), var(--blue-l), var(--red-m), var(--red-l), var(--purple-m), var(--purple-l));
+      font-family: 'Great Vibes', cursive; font-size: clamp(2rem, 4.5vw, 3rem); 
+      opacity: 0; transition: 1.5s ease-in-out; line-height: 1.4;
+      /* Idle state: decorative gradient */
+      background: var(--sunset-gradient);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%;
       animation: metal 8s linear infinite;
+      /* Drop shadow for idle state */
+      filter: drop-shadow(0 2px 2px black);
+    }
+    .poem-out.active { 
+      opacity: 1; 
+      /* Active state: Removed the box, kept the text clean */
+      background: transparent !important; 
+      -webkit-background-clip: unset; -webkit-text-fill-color: unset;
+      color: #fff; /* White text for max contrast */
+      display: inline-block;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5); /* Deep shadow for visibility */
     }
     @keyframes metal { to { background-position: 200% center; } }
   </style>
 </head>
 <body>
+
+<div id="errorMsg">Error Loading Files. Check Console (F12).</div>
+<div id="blueFollowerContainer"><div id="lFollow" style="width:100%; height:100%;"></div></div>
+
+<video id="bgVideo" playsinline muted loop preload="auto">
+  <source src="forest.mp4" type="video/mp4">
+</video>
 
 <div id="loader">
   <button id="beginBtn">Begin Experience</button>
@@ -90,12 +194,17 @@
   </div>
 </div>
 
-<div class="bg"></div>
-
 <div class="main" id="main">
   <div class="left">
     <div class="jackpot-box"><div class="reel" id="reel"></div></div>
-    <button class="btn" onclick="shuffle()">Shuffle</button>
+    <div class="shuffle-wrapper">
+        <button class="btn" style="width:220px;" onclick="shuffle()">Shuffle Reel</button>
+        <div class="controls">
+            <button class="btn" onclick="prevSong()">Prev Song</button>
+            <button class="btn" onclick="nextSong()">Next Song</button>
+        </div>
+        <div id="redButterflyContainer"><div id="lRed" style="width:100%; height:100%;"></div></div>
+    </div>
   </div>
   <div class="right"><div id="poemOut" class="poem-out"></div></div>
 </div>
@@ -103,75 +212,245 @@
 <audio id="player"></audio>
 
 <script>
-  // 1. Data
-  const poems = [
-    { title: "Blue as Evening", text: "Calm as the hour when the sun lets go,<br>Leaving warmth where the long shadows grow.<br>You hold that moment, fragile and true,<br>Where the day exhales into softer hues." },
-    { title: "Tidal Quiet", text: "You feel like waves that don’t rush the shore,<br>Content to return, again and once more.<br>There’s comfort in knowing you don’t explain,<br>You arrive like the tide — gentle, the same." },
-    { title: "Moon-Touched", text: "You carry the calm of a moonlit sea,<br>A quiet confidence that doesn’t need to be seen.<br>No chaos stays where your stillness grew,<br>Just silvered silence, tender and blue." },
-    { title: "Where Noise Ends", text: "You exist where the world softens its sound,<br>Where thoughts slow down just by being around.<br>Some souls shine loud — you simply imbue<br>The space with a depth that feels honestly blue." },
-    { title: "Blue, Breathing", text: "Like air before rain, like calm before sleep,<br>You move through layers tender and deep.<br>If peace had rhythm and time had a view,<br>It would slow itself down just to match you." },
-    { title: "Sea Without Edges", text: "You feel like water that doesn’t insist,<br>That shapes itself gently to what exists.<br>Some things don’t need to prove what they do —<br>They linger by nature, endlessly blue." },
-    { title: "Twilight Mind", text: "You think like the sky just after the sun,<br>When nothing has ended, yet nothing’s begun.<br>In that quiet balance where day slips through,<br>You remain, unbroken, beautifully blue." },
-    { title: "The Comfort Shade", text: "There’s a reason calm wears your tone,<br>Why stillness feels less alone.<br>If the world ever needed a softer cue,<br>It would pause and look closer at you." },
-    { title: "Depth Over Distance", text: "You don’t feel far — you feel deep,<br>Like secrets the ocean chooses to keep.<br>Some things aren’t meant to be pulled into view,<br>They’re meant to be trusted — like blue." },
-    { title: "Blue, Unasked", text: "You never demand to be understood,<br>Your presence explains itself slowly.<br>There’s ease in how you simply stay true,<br>Untouched by the need to be anything new." },
-    { title: "Evening Water", text: "You feel like the sea when the wind lies low,<br>When reflections stretch and the currents slow.<br>Some calm isn’t silence — it’s movement done right,<br>And you carry that balance, day into night." },
-    { title: "Blue Is a Feeling", text: "Not a color you see — a state you’re in,<br>Like a thought that settles beneath the skin.<br>And once you’re there, the world feels true,<br>Less sharp, less heavy, quietly blue." },
-    { title: "Soft Horizon", text: "You stand where the sea meets the sky,<br>Where nothing decides to end or try.<br>Some beauty lives where lines undo —<br>That’s where I always find you." },
-    { title: "Blue, Held Still", text: "You don’t chase light — it comes to you,<br>Resting softly in borrowed hue.<br>In a world that rushes to prove and pursue,<br>You stay — unchanged, unmistakably blue." },
-    { title: "Calm With Depth", text: "You aren’t quiet because you lack sound,<br>You’re quiet because nothing’s missing around.<br>Some presence heals without trying to do —<br>That effortless ease belongs to you." },
-    { title: "Ocean Memory", text: "You feel remembered rather than new,<br>Like a place the heart already knew.<br>Some things don’t arrive — they resume,<br>Like the comfort of something blue." },
-    { title: "Blue at Rest", text: "You exist like water after the storm,<br>Still carrying depth, no longer torn.<br>Not loud, not fading, not passing through —<br>Just calm that holds, endlessly blue." },
-    { title: "Quiet Gravity", text: "You pull without force, without demand,<br>Like the sea holds the moon by an invisible hand.<br>Some beauty works without making a view —<br>It simply exists, quietly blue." },
-    { title: "Blue, Unbroken", text: "You don’t fracture under changing skies,<br>You adapt like water, steady and wise.<br>There’s grace in staying soft yet true,<br>No matter the light passing through." },
-    { title: "Where Calm Lives", text: "You feel like the place thoughts go to rest,<br>Where nothing competes, nothing tests.<br>If calm had a home and peace had a view,<br>It would quietly look a lot like you." }
-  ];
-
-  // Repeat to 200
-  const list = [];
-  for(let i=0; i<200; i++) list.push(poems[i % poems.length]);
-
-  // 2. Music
-  const tracks = ['s1.mp3', 's2.mp3', 's3.mp3', 's4.mp3', 's5.mp3', 's6.mp3', 's7.mp3', 's8.mp3'];
-  let trackIdx = 0;
-  const player = document.getElementById('player');
-  
-  function playNext() {
-    player.src = tracks[trackIdx];
-    player.play();
-    player.onended = () => { trackIdx = (trackIdx + 1) % tracks.length; playNext(); };
+  function showError(msg) {
+    console.error(msg);
+    const errBox = document.getElementById('errorMsg');
+    errBox.innerText = msg;
+    errBox.style.display = 'block';
+    setTimeout(() => errBox.style.display = 'none', 5000);
   }
 
-  // 3. Start
+  let followAnim, redAnim;
+
+  try {
+    followAnim = lottie.loadAnimation({ 
+      container: document.getElementById('lFollow'), 
+      renderer: 'svg', loop: true, autoplay: true, 
+      path: 'blue.json' 
+    });
+  } catch(e) { showError("Error initializing Blue Butterfly"); }
+
+  try {
+    redAnim = lottie.loadAnimation({ 
+      container: document.getElementById('lRed'), 
+      renderer: 'svg', loop: true, autoplay: true, 
+      path: 'red.json' 
+    });
+  } catch(e) { showError("Error initializing Red Butterfly"); }
+
+
+  const video = document.getElementById('bgVideo');
   document.getElementById('beginBtn').onclick = function() {
     this.style.display = 'none';
     const text = document.getElementById('lText');
     text.style.display = 'block';
-    text.style.animation = 'cinematicFade 10s forwards';
-    playNext();
+    text.style.animation = 'cinematicFade 10s forwards ease-in-out';
+    updateTrack();
+    
+    video.play().catch(e => {
+      video.style.opacity = '1';
+    });
+
     setTimeout(() => {
       document.getElementById('loader').style.display = 'none';
       document.getElementById('main').style.opacity = '1';
+      video.style.opacity = '1';
+      document.getElementById('blueFollowerContainer').style.opacity = '1'; 
+      document.getElementById('redButterflyContainer').style.opacity = '1';
     }, 10000);
   };
 
-  // 4. Jackpot
+  const poems = [
+    // --- PART I: THE BLUE MOVEMENT (97 Poems) ---
+    { title: "Blue, Remaining", text: "You stay where moments usually leave,<br>Lingering longer than they believe.<br>The air shifts slower when you’re near,<br>As if time learns patience here." },
+    { title: "Quiet Undertow", text: "You pull like water beneath the calm,<br>Not enough to drown, enough to palm.<br>There’s motion hidden in your rest,<br>A silent strength that knows its best." },
+    { title: "Blue, Unhurried", text: "You walk like nothing waits ahead,<br>No past behind you begging to be read.<br>Each step exists for just that step,<br>No borrowed weight, no future debt." },
+    { title: "After the Noise", text: "You arrive once echoes fade,<br>Where sharp thoughts finally unbraid.<br>The mind unclenches, breath returns,<br>Nothing demands, nothing burns." },
+    { title: "Blue, Contained", text: "You don’t spill over, don’t retreat,<br>You hold yourself complete.<br>There’s comfort in your measured sway,<br>In knowing you won’t drift away." },
+    { title: "Low Tide Thought", text: "You think like waves when they withdraw,<br>Leaving patterns without flaw.<br>Nothing chases what has gone,<br>The shore accepts, the sea moves on." },
+    { title: "Blue, Familiar", text: "You feel remembered, not brand new,<br>Like skies the heart already knew.<br>No introductions need be said,<br>You settle where the mind has read." },
+    { title: "Still Current", text: "You move without disturbing shape,<br>A quiet flow that doesn’t scrape.<br>Resistance fails to find its grip,<br>Tension loosens, starts to slip." },
+    { title: "Blue, Weighted", text: "You carry depth like settled rain,<br>Heavy, but free of pain.<br>No pressure bends the way you stand,<br>You rest complete, not unplanned." },
+    { title: "Where Calm Persists", text: "You exist past the need for proof,<br>Beyond the noise, beneath the roof.<br>The world forgets to ask you why,<br>It simply rests as you pass by." },
+    { title: "Blue, Undisturbed", text: "You remain where pressure fails,<br>Where urgency quietly derails.<br>No force convinces you to bend,<br>You hold your ground without an end." },
+    { title: "Silent Reach", text: "You touch without needing to claim,<br>Leaving warmth without a name.<br>The space remembers where you pass,<br>Not for speed, but for how long it lasts." },
+    { title: "Blue, Balanced", text: "You don’t tip toward loss or gain,<br>You hold the middle of the day.<br>No lean toward loss or gain,<br>You loosen pleasure, ease the pain." },
+    { title: "After the Pull", text: "You exist once desire sleeps,<br>When wanting loosens what it keeps.<br>No hunger shapes the way you are,<br>You don’t measure near or far." },
+    { title: "Blue, Grounded", text: "You don’t float off or sink below,<br>You hold the line where thoughts slow.<br>There’s trust in how you stay aware,<br>Present without a need for care." },
+    { title: "Soft Continuum", text: "You feel like time that doesn’t cut,<br>Where seconds open instead of shut.<br>No sharp before, no harsh after,<br>Just steady being, quieter laughter." },
+    { title: "Blue, Unclaimed", text: "You don’t belong to what has passed,<br>Nor chase the shape of what won’t last.<br>You stay untouched by grasp or fear,<br>Whole enough just standing here." },
+    { title: "Held Horizon", text: "You live where distance loses form,<br>Neither shelter nor the storm.<br>The edge dissolves into your view,<br>Nothing decides what’s old or new." },
+    { title: "Blue, Settling", text: "You arrive like dust after light,<br>Gently landing, not asking right.<br>The room adjusts without a sound,<br>As if it knew you’d come around." },
+    { title: "Quiet Weightlessness", text: "You carry nothing that drags you down,<br>Yet depth surrounds you all around.<br>There’s gravity without the strain,<br>A presence felt but hard to name." },
+    { title: "Blue, Still Arriving", text: "You don’t enter — you unfold,<br>Like warmth easing into cold.<br>No edge announces where you start,<br>You settle first in the heart." },
+    { title: "Unforced Depth", text: "You don’t descend to prove how far,<br>You deepen simply as you are.<br>No markers show where surface ends,<br>The quiet keeps its own amends." },
+    { title: "Blue, Pendulum", text: "You move at a pace that time respects,<br>Leaving space where it expects.<br>No second feels misplaced or late,<br>You loosen the grip of fate." },
+    { title: "Quiet Center", text: "You live where motion finds its core,<br>Neither needing less nor more.<br>The pull dissolves around your frame,<br>Nothing asks you to remain." },
+    { title: "Blue, Untouched", text: "You pass through moments without bruise,<br>Not because you hide, but choose.<br>You let the sharpness lose its claim,<br>You don’t absorb what tries to name." },
+    { title: "After the Echo", text: "You exist once the sound lets go,<br>When meaning settles into low.<br>No repetition pulls you back,<br>You stay beyond the final crack." },
+    { title: "Blue, Even", text: "You don’t rise high or sink away,<br>You hold the middle of the day.<br>No lean toward loss or gain,<br>You loosen pleasure, ease the pain." },
+    { title: "Soft Gravity", text: "You pull without intent or need,<br>No forceful draw, no promised speed.<br>The room aligns around your tone,<br>As if it knew where to belong." },
+    { title: "Blue, Continuous", text: "You don’t reset or start again,<br>You move like breath without an end.<br>No sharp divide between before,<br>Just flowing into something more." },
+    { title: "Unmarked Water", text: "You leave no trail yet change the shape,<br>Like tide that doesn’t need a name.<br>The shore remembers what you did,<br>Even after it’s erased or hid." },
+    { title: "Blue, Holding", text: "You don’t grip tight or let things fall,<br>You hold without control at all.<br>The strain dissolves inside your stay,<br>Nothing feels forced to go or play." },
+    { title: "Quiet Alignment", text: "You bring things into subtle line,<br>Without a rule, without a sign.<br>The pieces shift because you’re near,<br>Not from reason, not from fear." },
+    { title: "Blue, Echoed", text: "You feel remembered, not recalled,<br>Like something known before the fall.<br>No effort goes into your name,<br>You settle in just all the same." },
+    { title: "Submerged Flow", text: "You move beneath the quiet skin,<br>Not still at all, just held within.<br>No splash announces what you do,<br>You change direction slowly, true." },
+    { title: "Blue, Unpressured", text: "You don’t respond to force or plea,<br>You open only when it’s free.<br>No push determines where you bend,<br>You stay intact, you don’t contend." },
+    { title: "After Wanting", text: "You appear once hunger fades,<br>When need loosens all its trades.<br>No ache directs the way you stay,<br>You don’t improve or drift away." },
+    { title: "Blue, Centered Light", text: "You don’t shine out or pull apart,<br>You glow like balance in the dark.<br>The shadow learns how not to press,<br>The light forgets to overstep." },
+    { title: "Quiet Agreement", text: "You feel like things finally align,<br>Not by logic, not by sign.<br>The moment nods and settles in,<br>No argument left to win." },
+    { title: "Blue, Unbroken Flow", text: "You don’t stop when edges form,<br>You bend around them, smooth and warm.<br>No fracture marks where pressure grew,<br>You carry shape without the bruise." },
+    { title: "Where Ease Lives", text: "You exist where effort ends,<br>Where nothing needs to prove or bend.<br>The breath deepens on its own,<br>The body feels less overgrown." },
+    { title: "Blue, Unfading", text: "You don’t weaken with passing hours,<br>You hold your tone through shifting powers.<br>No moment steals what you contain,<br>You stay consistent through the change." },
+    { title: "Quiet Latitude", text: "You exist between extremes of thought,<br>Where nothing needs to be overwrought.<br>No pull insists you choose a side,<br>You stay where truths can coincide." },
+    { title: "Blue, Unweighted", text: "You don’t carry borrowed load,<br>You travel light on every road.<br>No memory drags behind your feet,<br>You meet the present fully complete." },
+    { title: "Still Between", text: "You rest where motion learns to pause,<br>Not from force, not from cause.<br>The shift happens without command,<br>Like sand arranging into land." },
+    { title: "Blue, Unforced Light", text: "You don’t glow to be perceived,<br>You shine because you’re unconceived.<br>No angle begs the eye to stay,<br>You’re visible in a quieter way." },
+    { title: "After the Edge", text: "You appear once tension drops,<br>When thought releases all its knots.<br>No sharpness follows where you land,<br>The world softens on command." },
+    { title: "Blue, Undivided", text: "You don’t split what feels unsure,<br>You hold it whole and let it endure.<br>No side outweighs the other’s stay,<br>You let both breathe without decay." },
+    { title: "Soft Constant", text: "You remain while things rotate,<br>Unaffected by their weight.<br>No shift convinces you to bend,<br>You stay consistent without defend." },
+    { title: "Blue, Unclaimed Space", text: "You live where ownership dissolves,<br>Where nothing asks, nothing absolves.<br>No label fits the way you stay,<br>You exist outside display." },
+    { title: "Quiet Alignment II", text: "You realign without a sound,<br>The pieces settle all around.<br>No force directs where they belong,<br>They find their place because you’re strong." },
+    { title: "Blue, Continuous Rest", text: "You don’t arrive then disappear,<br>You stay like breath, always here.<br>No peak announces where you end,<br>You flow without a need to mend." },
+    { title: "Held Silence", text: "You don’t empty what goes quiet,<br>You fill it without riot.<br>No absence sharpens in your wake,<br>The hush feels whole, not fake." },
+    { title: "Blue, Untethered", text: "You don’t drift off or pull away,<br>You stay without a need to stay.<br>No anchor keeps you in your place,<br>No wind persuades you into space." },
+    { title: "After the Rush", text: "You arrive when urgency sleeps,<br>When speed releases what it keeps.<br>No echo of the sprint remains,<br>The pulse forgets its former strain." },
+    { title: "Blue, Even Depth", text: "You don’t darken as you go,<br>You stay consistent below.<br>No sudden drop, no hidden floor,<br>You deepen evenly, nothing more." },
+    { title: "Quiet Permission", text: "You allow without request,<br>You let the moment do the rest.<br>No rules define what’s meant to be,<br>You open space for things to breathe." },
+    { title: "Blue, Settled Core", text: "You don’t shift when layers move,<br>You stay beneath what tries to prove.<br>No surface change persuades your stay,<br>You hold the base in quiet way." },
+    { title: "Soft Continuance", text: "You don’t stop to start again,<br>You carry through without a bend.<br>No moment asks you to reset,<br>You flow without regret." },
+    { title: "Blue, Unending Ease", text: "You don’t promise rest or release,<br>You simply let the tension cease.<br>No finish line defines your stay,<br>You ease the way without delay." },
+    { title: "Blue, Unrushed Ground", text: "You don’t hurry what already fits,<br>You wait where meaning gently sits.<br>No second feels like it’s behind,<br>You loosen time inside the mind." },
+    { title: "Quiet Equator", text: "You live where opposites agree,<br>Where heat and cool share symmetry.<br>No side overwhelms the other’s stay,<br>You let them breathe the same long way." },
+    { title: "Blue, Unmarked Time", text: "You don’t divide the hours clean,<br>You blur what was and what has been.<br>No milestone tells you when to change,<br>You let the sequence rearrange." },
+    { title: "After Control", text: "You appear when grip lets go,<br>When certainty forgets to know.<br>No plan survives the way you stay,<br>You soften need to lead the way." },
+    { title: "Blue, Continuous Body", text: "You move like breath beneath the skin,<br>No clear place where you begin.<br>The muscles rest without command,<br>The pulse forgets to reprimand." },
+    { title: "Soft Bearing", text: "You carry weight without the strain,<br>No mark left where it once remained.<br>The load adjusts to how you stand,<br>Lighter without being planned." },
+    { title: "Blue, Undistorted", text: "You don’t bend under reflection’s eye,<br>You stay the same when angles try.<br>No mirror shifts the way you read,<br>You hold your form without a need." },
+    { title: "Quiet Latitude II", text: "You give the mind a wider span,<br>Not north or south, not yes or plan.<br>No compass pulls you off your stay,<br>You let direction fade away." },
+    { title: "Blue, Unpressured Space", text: "You leave room without retreat,<br>You don’t compress what’s incomplete.<br>No closeness asks you to invade,<br>No distance feels like it’s delayed." },
+    { title: "After the Question", text: "You arrive once asking ends,<br>When curiosity finally bends.<br>No answer forms to take your place,<br>You hold the pause with steady grace." },
+    { title: "Blue, Steady Middle", text: "You don’t lean forward or fall back,<br>You stay where nothing feels off-track.<br>No tilt persuades you to adjust,<br>You trust the ground because you must." },
+    { title: "Quiet Continuity", text: "You don’t pause to start again,<br>You pass through breaks without a bend.<br>No cut between the now and then,<br>You carry both without a seam." },
+    { title: "Blue, Untouched Depth", text: "You don’t darken under weight,<br>You deepen without changing state.<br>No pressure alters how you feel,<br>You stay intact, quiet, real." },
+    { title: "Soft Horizon II", text: "You live where edges lose their say,<br>Where sky and sea forget the way.<br>No line insists on being drawn,<br>The separation quietly gone." },
+    { title: "Blue, Unrequired", text: "You don’t need to be invoked,<br>You arrive when effort’s broke.<br>No ritual invites your stay,<br>You come when trying slips away." },
+    { title: "After the Hold", text: "You appear once hands release,<br>When clinging loosens into ease.<br>No loss follows what’s let go,<br>You make the letting gentle, slow." },
+    { title: "Blue, Unlayered", text: "You don’t stack meaning on your form,<br>You stay intact through quiet norm.<br>No depth hides underneath your face,<br>You’re whole without another place." },
+    { title: "Quiet Agreement III", text: "You feel like things accept their place,<br>Without debate, without a case.<br>No side insists on being right,<br>The tension dims into soft light." },
+    { title: "Blue, Residue", text: "You don’t pass through or move along,<br>You stay without becoming strong.<br>No mark declares that you were here,<br>Yet absence feels less sharp, less clear." },
+    { title: "Blue, Unmoved", text: "You don’t react to every shift,<br>You let the surface drift.<br>No tremor reaches where you stay,<br>You hold beneath the sway." },
+    { title: "Quiet Meridian", text: "You exist where lines align,<br>Neither ahead nor left behind.<br>No crossing pulls you out of form,<br>You hold the axis through the storm." },
+    { title: "Blue, Untouched Pace", text: "You don’t speed up when things collide,<br>You keep your rhythm wide.<br>No urgency distorts your frame,<br>You move untouched by time’s demand." },
+    { title: "After the Hum", text: "You arrive when echoes thin,<br>When loudness folds within.<br>No residue of force remains,<br>You calm the pulse, unchain the veins." },
+    { title: "Blue, Undiverted", text: "You don’t stray when paths divide,<br>You hold the centerline.<br>No option tugs you into doubt,<br>You stay without sorting out." },
+    { title: "Soft Interval", text: "You exist between the beats,<br>Where nothing rushes to repeat.<br>No gap feels empty in your stay,<br>You make the pause feel whole, not stray." },
+    { title: "Blue, Unsplit", text: "You don’t divide to understand,<br>You hold the whole at hand.<br>No fracture clarifies your view,<br>You keep the shape intact and true." },
+    { title: "Quiet Holding Field", text: "You gather without pulling tight,<br>You keep things balanced, light.<br>No force defines the way you stay,<br>You let the tension find its way." },
+    { title: "Blue, Unedited", text: "You don’t revise what comes your way,<br>You let it stay.<br>No polish hides the shape beneath,<br>You trust what simply breathes." },
+    { title: "After the Grip", text: "You appear once hands relax,<br>When tension slips its tracks.<br>No loss follows what is freed,<br>You change the shape of need." },
+    { title: "Blue, Stable Drift", text: "You move without direction’s strain,<br>Yet never feel unchained.<br>No push defines the way you go,<br>You drift and still you know." },
+    { title: "Quiet Convergence", text: "You feel like threads returning whole,<br>No knot, no role.<br>The parts remember where they meet,<br>No rush to be complete." },
+    { title: "Blue, Unreactive", text: "You don’t flare when pressed or seen,<br>You stay serene.<br>No spark disturbs your settled hue,<br>You keep the depth you grew into." },
+    { title: "Soft Persistence", text: "You last without insisting why,<br>You don’t defy.<br>No effort marks your staying power,<br>You hold through minute, hour." },
+    { title: "Blue, Uncornered", text: "You don’t feel trapped by edge or frame,<br>You stay the same.<br>No limit forces you to choose,<br>You soften walls into use." },
+    { title: "After the Push", text: "You arrive when force lets rest,<br>When effort leaves the chest.<br>No recoil follows what was spent,<br>You quiet the intent." },
+    { title: "Blue, Even Silence", text: "You don’t hollow out the room,<br>You make it bloom.<br>No hush feels thin where you remain,<br>The quiet holds its weight." },
+    { title: "Quiet Axis", text: "You stay where things rotate around,<br>Unshaken ground.<br>No spin persuades you to adjust,<br>You hold because you must." },
+    { title: "Blue, Unending Middle", text: "You don’t begin or disappear,<br>You’re always here.<br>No edge announces where you stay,<br>You are the way." },
+
+    // --- PART II: THE PURPLE MOVEMENT (31 Poems) ---
+    { title: "Purple, First Light", text: "It rises where calm meets embered warmth,<br>Neither rush nor blaze dictates its form.<br>The air bends softly to its quiet pace,<br>Time leans in, not to chase." },
+    { title: "Purple, Whispering Horizon", text: "It stretches where two currents converge,<br>Blue depth hums, embered warmth surges.<br>No force directs, no spark insists,<br>Softness moves where stillness persists." },
+    { title: "Purple, Hidden Hearth", text: "It glows beneath quiet understanding,<br>Calm depth and embered warmth expanding.<br>No attention asks, no spark proclaims,<br>Steady heat hums through patient frames." },
+    { title: "Purple, Merged Currents", text: "It winds where warmth and stillness meet,<br>Neither pushing, neither retreat.<br>No motion breaks its gentle tide,<br>Soft heat flows, patient inside." },
+    { title: "Purple, Embered Veil", text: "It hums beneath awareness’ skin,<br>Blue depth and embered warmth within.<br>No blaze disrupts, no tide demands,<br>Soft glow moves through patient hands." },
+    { title: "Purple, Quiet Confluence", text: "It rests where two currents fold,<br>Blue calm and embered warmth hold.<br>No rush disturbs its patient wave,<br>Soft heat hums, steady and brave." },
+    { title: "Purple, Still Embers", text: "It lingers where warmth meets quiet,<br>Neither claiming, neither riot.<br>No spark demands, no current sways,<br>Soft glow hums through patient days." },
+    { title: "Purple, Flowing Balance", text: "It moves where patience and warmth entwine,<br>Blue calm hums, embered fire shines.<br>No motion pushes, none divides,<br>Soft heat drifts where stillness hides." },
+    { title: "Purple, Gentle Fusion", text: "It blends where quiet and warmth reside,<br>Neither forceful, neither wide.<br>No spark asserts, no tide insists,<br>Soft glow hums where calm persists." },
+    { title: "Purple, Embered Stream", text: "It winds beneath the patient sky,<br>Blue depth hums, embered warmth nearby.<br>No rush disturbs its measured flow,<br>Soft heat glows, steady and slow." },
+    { title: "Purple, Luminous Drift", text: "It floats where calm and ember meet,<br>Neither blazing, neither fleet.<br>No current pushes, none divides,<br>Soft glow hums where stillness hides." },
+    { title: "Purple, Embered Rest", text: "It rests beneath the quiet glow,<br>Blue calm hums, embered warmth flows.<br>No blaze demands attention’s claim,<br>Still heat hums, untouched by aim." },
+    { title: "Purple, Merging Veins", text: "It flows where warmth and stillness blend,<br>Neither forceful, neither end.<br>No motion breaks its patient wave,<br>Soft heat hums, quietly brave." },
+    { title: "Purple, Embered Silence", text: "It hums beneath the patient veil,<br>Blue calm and embered warmth prevail.<br>No spark disturbs, no current claims,<br>Soft glow moves through steady frames." },
+    { title: "Purple, Quiet Hearth", text: "It rests where warmth and calm combine,<br>Neither urgent, neither shine.<br>No blaze insists, no tide directs,<br>Soft heat flows without effects." },
+    { title: "Purple, Steady Ember", text: "It lingers where currents intertwine,<br>Blue depth hums, embered warmth align.<br>No rush disrupts its patient flow,<br>Soft glow hums, gentle and slow." },
+    { title: "Purple, Harmonious Glow", text: "It shines where calm and warmth converge,<br>Neither dominant, neither urge.<br>No current pushes, no spark insists,<br>Soft heat hums where stillness persists." },
+    { title: "Purple, Patient Veil", text: "It floats beneath awareness’ skin,<br>Blue depth hums, embered warmth within.<br>No spark demands, no current calls,<br>Soft glow moves where quiet falls." },
+    { title: "Purple, Embered Horizon", text: "It stretches where warmth meets stillness,<br>Neither claiming, neither illness.<br>No blaze disturbs its patient wave,<br>Soft heat hums, quietly brave." },
+    { title: "Purple, Unified Current", text: "It winds where quiet and warmth unite,<br>Neither rushing, neither flight.<br>No motion disrupts its measured sway,<br>Soft glow hums, steady all day." },
+    { title: "Purple, Still Harmony", text: "It rests where currents fold in peace,<br>Blue depth hums, embered warmth release.<br>No rush disturbs its gentle form,<br>Soft glow hums, patient and warm." },
+    { title: "Purple, Embered Flow", text: "It drifts beneath the patient sky,<br>Blue calm hums, embered warmth nearby.<br>No blaze commands, no current sways,<br>Soft heat moves through quiet days." },
+    { title: "Purple, Radiant Merge", text: "It glows where calm and ember meet,<br>Neither forceful, neither fleet.<br>No motion breaks its measured way,<br>Soft warmth hums, steady to stay." },
+    { title: "Purple, Embered Path", text: "It winds where warmth and stillness fold,<br>Neither claiming, neither bold.<br>No spark disturbs, no tide insists,<br>Soft glow hums where calm persists." },
+    { title: "Purple, Flowing Hearth", text: "It rests beneath awareness’ veil,<br>Blue depth hums, embered warmth prevail.<br>No blaze demands, no current guides,<br>Soft heat hums through patient tides." },
+    { title: "Purple, Gentle Radiance", text: "It shines where quiet and warmth combine,<br>Neither urgent, neither shine.<br>No rush disturbs its gentle sway,<br>Soft glow hums through patient day." },
+    { title: "Purple, Hidden Flow", text: "It moves where calm and warmth entwine,<br>Neither forceful, neither line.<br>No current pushes, no spark insists,<br>Soft heat hums where stillness persists." },
+    { title: "Purple, Unified Ember", text: "It rests where currents merge in light,<br>Blue depth hums, embered warmth bright.<br>No blaze disturbs its steady form,<br>Soft glow hums, quiet and warm." },
+    { title: "Purple, Patient Glow", text: "It hums beneath the quiet sky,<br>Blue calm and embered warmth nearby.<br>No rush disrupts its measured way,<br>Soft heat hums, gentle to stay." },
+    { title: "Purple, Radiant Hearth", text: "It glows where warmth and calm align,<br>Neither urgent, neither sign.<br>No motion breaks its steady flow,<br>Soft glow hums, patient to show." },
+    { title: "Purple, Quiet Fusion", text: "It flows where stillness meets the flame,<br>Blue depth hums, embered warmth the same.<br>No spark insists, no current calls,<br>Soft heat hums through patient walls." }
+  ];
+  
+  const list = []; 
+  for(let i=0; i<300; i++) list.push(poems[i % poems.length]);
+  
+  const tracks = ['s1.mp3', 's2.mp3', 's3.mp3', 's4.mp3', 's5.mp3', 's6.mp3', 's7.mp3', 's8.mp3'];
+  let trackIdx = 0; 
+  const player = document.getElementById('player');
+  
+  function updateTrack() { 
+    player.src = tracks[trackIdx]; 
+    player.play().catch(e => console.log("Audio waiting")); 
+  }
+  
+  function nextSong() { trackIdx = (trackIdx + 1) % tracks.length; updateTrack(); }
+  function prevSong() { trackIdx = (trackIdx - 1 + tracks.length) % tracks.length; updateTrack(); }
+  player.onended = () => nextSong();
+
   const reel = document.getElementById('reel');
-  const itemsHTML = [...list, ...list].map(p => `<div class="item">${p.title}</div>`).join('');
-  reel.innerHTML = itemsHTML;
+  reel.innerHTML = list.map(p => `<div class="item">${p.title}</div>`).join('');
+  let spinning = false;
 
   function shuffle() {
-    const stopIdx = Math.floor(Math.random() * 200);
-    const offset = (stopIdx + 200) * 60; // 200 is the buffer for deep spin
-    reel.style.transition = 'transform 6s cubic-bezier(0.45, 0.05, 0.2, 1)';
+    if(spinning) return; spinning = true;
+    const stopIdx = Math.floor(Math.random() * (list.length - 20)) + 10;
+    const offset = stopIdx * 70;
+    reel.style.transition = 'transform 6s cubic-bezier(0.16, 1, 0.3, 1)';
     reel.style.transform = `translateY(-${offset}px)`;
+    document.getElementById('poemOut').classList.remove('active');
     
-    document.getElementById('poemOut').style.opacity = '0';
     setTimeout(() => {
       document.getElementById('poemOut').innerHTML = list[stopIdx].text;
-      document.getElementById('poemOut').style.opacity = '1';
+      document.getElementById('poemOut').classList.add('active');
+      spinning = false;
     }, 6000);
   }
+
+  const bFollow = document.getElementById('blueFollowerContainer');
+  let bx = innerWidth/2, by = innerHeight/2, tx = bx, ty = by, isResting = false, isClick = false, restT;
+  
+  function animate() {
+    if (!isResting) {
+        let dx = tx - bx, dy = ty - by, dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 5) {
+            if(isClick) { isClick = false; isResting = true; restT = setTimeout(() => isResting = false, 5000); }
+            else { tx = Math.random()*innerWidth; ty = Math.random()*innerHeight; }
+        }
+        bx += dx * 0.025; by += dy * 0.025;
+    }
+    const tilt = (tx - bx) * 0.05;
+    bFollow.style.transform = `translate3d(${bx-55}px, ${by-55}px, 0) rotate(${tilt}deg)`;
+    requestAnimationFrame(animate);
+  }
+  animate();
+  
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    tx = e.clientX; ty = e.clientY; isClick = true; isResting = false; clearTimeout(restT);
+  });
 </script>
 </body>
 </html>
