@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Infinite Verse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@400;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --blue-m: #1e40af; --blue-l: #60a5fa;
+      --red-m: #991b1b; --red-l: #f87171;
+      --purple-m: #581c87; --purple-l: #c084fc;
+    }
+
+    * { box-sizing: border-box; }
+    body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; color: white; font-family: 'Poppins', sans-serif; overflow: hidden; }
+
+    /* --- Loading Screen --- */
+    #loader {
+      position: fixed; inset: 0; background: black; z-index: 2000;
+      display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center;
+    }
+    .loader-text {
+      font-family: 'Great Vibes', cursive; font-size: clamp(1.5rem, 4vw, 2.5rem);
+      max-width: 800px; line-height: 1.6; opacity: 0; display: none;
+    }
+    #beginBtn { 
+      padding: 15px 40px; background: white; color: black; border: none; 
+      cursor: pointer; font-weight: bold; letter-spacing: 2px; text-transform: uppercase; 
+    }
+
+    @keyframes cinematicFade {
+      0% { opacity: 0; transform: translateY(20px); color: var(--blue-l); }
+      20% { opacity: 1; transform: translateY(0); }
+      40% { color: var(--red-l); }
+      70% { color: var(--purple-l); opacity: 1; }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    /* --- Background --- */
+    .bg {
+      position: fixed; inset: 0; z-index: -1;
+      background: radial-gradient(circle at 50% 50%, #1e1b4b, #450a0a, #2e1065);
+      background-size: 400% 400%; animation: drift 60s ease infinite;
+    }
+    @keyframes drift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+    
+    /* --- Layout --- */
+    .main { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: 2s; }
+    .left { 
+      width: 40%; height: 100%; border-right: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(50px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .right { width: 60%; display: flex; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+
+    /* --- Jackpot --- */
+    .jackpot-box {
+      width: 100%; height: 300px; overflow: hidden; position: relative;
+      mask-image: linear-gradient(transparent, black, transparent);
+      -webkit-mask-image: linear-gradient(transparent, black, transparent);
+    }
+    .reel { position: absolute; width: 100%; top: 0; transition: transform 6s cubic-bezier(0.45, 0.05, 0.2, 1); }
+    .item { 
+      height: 60px; display: flex; align-items: center; justify-content: center;
+      color: black; font-weight: 800; text-transform: uppercase; letter-spacing: 6px; 
+    }
+    .btn { 
+      margin-top: 30px; padding: 15px 30px; background: black; color: white; 
+      border: 1px solid white; cursor: pointer; letter-spacing: 2px;
+    }
+
+    /* --- Result --- */
+    .poem-out {
+      font-family: 'Great Vibes', cursive; font-size: 3rem; opacity: 0; transition: 1s;
+      background: linear-gradient(to right, var(--blue-m), var(--blue-l), var(--red-m), var(--red-l), var(--purple-m), var(--purple-l));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%;
+      animation: metal 8s linear infinite;
+    }
+    @keyframes metal { to { background-position: 200% center; } }
+  </style>
+</head>
+<body>
+
+<div id="loader">
+  <button id="beginBtn">Begin Experience</button>
+  <div id="lText" class="loader-text">
+    "The ocean drifts like endless tides across quiet skies, soft currents carrying whispers of hidden worlds... In the endless sky, ocean and ember bloom together, vivid and alive."
+  </div>
+</div>
+
+<div class="bg"></div>
+
+<div class="main" id="main">
+  <div class="left">
+    <div class="jackpot-box"><div class="reel" id="reel"></div></div>
+    <button class="btn" onclick="shuffle()">Shuffle</button>
+  </div>
+  <div class="right"><div id="poemOut" class="poem-out"></div></div>
+</div>
+
+<audio id="player"></audio>
+
+<script>
+  // 1. Data
+  const poems = [
+    { title: "Blue as Evening", text: "Calm as the hour when the sun lets go,<br>Leaving warmth where the long shadows grow.<br>You hold that moment, fragile and true,<br>Where the day exhales into softer hues." },
+    { title: "Tidal Quiet", text: "You feel like waves that don’t rush the shore,<br>Content to return, again and once more.<br>There’s comfort in knowing you don’t explain,<br>You arrive like the tide — gentle, the same." },
+    { title: "Moon-Touched", text: "You carry the calm of a moonlit sea,<br>A quiet confidence that doesn’t need to be seen.<br>No chaos stays where your stillness grew,<br>Just silvered silence, tender and blue." },
+    { title: "Where Noise Ends", text: "You exist where the world softens its sound,<br>Where thoughts slow down just by being around.<br>Some souls shine loud — you simply imbue<br>The space with a depth that feels honestly blue." },
+    { title: "Blue, Breathing", text: "Like air before rain, like calm before sleep,<br>You move through layers tender and deep.<br>If peace had rhythm and time had a view,<br>It would slow itself down just to match you." },
+    { title: "Sea Without Edges", text: "You feel like water that doesn’t insist,<br>That shapes itself gently to what exists.<br>Some things don’t need to prove what they do —<br>They linger by nature, endlessly blue." },
+    { title: "Twilight Mind", text: "You think like the sky just after the sun,<br>When nothing has ended, yet nothing’s begun.<br>In that quiet balance where day slips through,<br>You remain, unbroken, beautifully blue." },
+    { title: "The Comfort Shade", text: "There’s a reason calm wears your tone,<br>Why stillness feels less alone.<br>If the world ever needed a softer cue,<br>It would pause and look closer at you." },
+    { title: "Depth Over Distance", text: "You don’t feel far — you feel deep,<br>Like secrets the ocean chooses to keep.<br>Some things aren’t meant to be pulled into view,<br>They’re meant to be trusted — like blue." },
+    { title: "Blue, Unasked", text: "You never demand to be understood,<br>Your presence explains itself slowly.<br>There’s ease in how you simply stay true,<br>Untouched by the need to be anything new." },
+    { title: "Evening Water", text: "You feel like the sea when the wind lies low,<br>When reflections stretch and the currents slow.<br>Some calm isn’t silence — it’s movement done right,<br>And you carry that balance, day into night." },
+    { title: "Blue Is a Feeling", text: "Not a color you see — a state you’re in,<br>Like a thought that settles beneath the skin.<br>And once you’re there, the world feels true,<br>Less sharp, less heavy, quietly blue." },
+    { title: "Soft Horizon", text: "You stand where the sea meets the sky,<br>Where nothing decides to end or try.<br>Some beauty lives where lines undo —<br>That’s where I always find you." },
+    { title: "Blue, Held Still", text: "You don’t chase light — it comes to you,<br>Resting softly in borrowed hue.<br>In a world that rushes to prove and pursue,<br>You stay — unchanged, unmistakably blue." },
+    { title: "Calm With Depth", text: "You aren’t quiet because you lack sound,<br>You’re quiet because nothing’s missing around.<br>Some presence heals without trying to do —<br>That effortless ease belongs to you." },
+    { title: "Ocean Memory", text: "You feel remembered rather than new,<br>Like a place the heart already knew.<br>Some things don’t arrive — they resume,<br>Like the comfort of something blue." },
+    { title: "Blue at Rest", text: "You exist like water after the storm,<br>Still carrying depth, no longer torn.<br>Not loud, not fading, not passing through —<br>Just calm that holds, endlessly blue." },
+    { title: "Quiet Gravity", text: "You pull without force, without demand,<br>Like the sea holds the moon by an invisible hand.<br>Some beauty works without making a view —<br>It simply exists, quietly blue." },
+    { title: "Blue, Unbroken", text: "You don’t fracture under changing skies,<br>You adapt like water, steady and wise.<br>There’s grace in staying soft yet true,<br>No matter the light passing through." },
+    { title: "Where Calm Lives", text: "You feel like the place thoughts go to rest,<br>Where nothing competes, nothing tests.<br>If calm had a home and peace had a view,<br>It would quietly look a lot like you." }
+  ];
+
+  // Repeat to 200
+  const list = [];
+  for(let i=0; i<200; i++) list.push(poems[i % poems.length]);
+
+  // 2. Music
+  const tracks = ['s1.mp3', 's2.mp3', 's3.mp3', 's4.mp3', 's5.mp3', 's6.mp3', 's7.mp3', 's8.mp3'];
+  let trackIdx = 0;
+  const player = document.getElementById('player');
+  
+  function playNext() {
+    player.src = tracks[trackIdx];
+    player.play();
+    player.onended = () => { trackIdx = (trackIdx + 1) % tracks.length; playNext(); };
+  }
+
+  // 3. Start
+  document.getElementById('beginBtn').onclick = function() {
+    this.style.display = 'none';
+    const text = document.getElementById('lText');
+    text.style.display = 'block';
+    text.style.animation = 'cinematicFade 10s forwards';
+    playNext();
+    setTimeout(() => {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('main').style.opacity = '1';
+    }, 10000);
+  };
+
+  // 4. Jackpot
+  const reel = document.getElementById('reel');
+  const itemsHTML = [...list, ...list].map(p => `<div class="item">${p.title}</div>`).join('');
+  reel.innerHTML = itemsHTML;
+
+  function shuffle() {
+    const stopIdx = Math.floor(Math.random() * 200);
+    const offset = (stopIdx + 200) * 60; // 200 is the buffer for deep spin
+    reel.style.transition = 'transform 6s cubic-bezier(0.45, 0.05, 0.2, 1)';
+    reel.style.transform = `translateY(-${offset}px)`;
+    
+    document.getElementById('poemOut').style.opacity = '0';
+    setTimeout(() => {
+      document.getElementById('poemOut').innerHTML = list[stopIdx].text;
+      document.getElementById('poemOut').style.opacity = '1';
+    }, 6000);
+  }
+</script>
+</body>
+</html>
