@@ -44,21 +44,18 @@
       top: 0; left: 0;
       width: 100vw; 
       height: 100vh;
-      /* Ensures the video covers the screen like a wallpaper */
       object-fit: cover; 
       z-index: 0;
       pointer-events: none;
       opacity: 0; 
       transition: opacity 2.5s ease-in;
-      /* Hardware acceleration to reduce lag */
       transform: translateZ(0);
       backface-visibility: hidden;
     }
 
-    /* Overlay to darken video slightly so text pops */
     .video-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.2); /* Slight tint for readability */
+      background: rgba(0,0,0,0.2); 
       z-index: 0; pointer-events: none;
     }
 
@@ -78,29 +75,37 @@
       flex-direction: column; text-align: center; padding: 40px;
       transition: opacity 1s ease-out;
     }
-    #beginBtn { 
-      padding: 15px 40px; 
+    
+    /* Mode Selection Container */
+    #modeSelection {
+        display: flex; gap: 20px;
+        opacity: 0; pointer-events: none; transform: translateY(20px);
+        transition: all 0.5s ease;
+    }
+    #modeSelection.ready {
+        opacity: 1; pointer-events: auto; transform: translateY(0);
+    }
+
+    .mode-btn { 
+      padding: 20px 40px; 
       background: transparent; 
       color: var(--neon-blue); 
       border: 2px solid var(--neon-purple); 
       cursor: pointer; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
       transition: all 0.3s;
       box-shadow: 0 0 15px rgba(192, 132, 252, 0.2);
-      /* Initially hidden until video is ready */
-      opacity: 0; pointer-events: none; transform: translateY(20px);
+      font-size: 16px;
+      border-radius: 8px;
     }
-    #beginBtn.ready {
-      opacity: 1; pointer-events: auto; transform: translateY(0);
-    }
-    #beginBtn:hover { 
+    .mode-btn:hover { 
       background: var(--neon-purple); 
       color: black;
-      box-shadow: 0 0 30px var(--neon-purple);
+      box-shadow: 0 0 40px var(--neon-purple);
       transform: scale(1.05); 
     }
     
     .loading-status {
-        margin-top: 20px;
+        margin-top: 30px;
         color: var(--neon-blue);
         font-size: 12px;
         opacity: 0.7;
@@ -121,20 +126,41 @@
       100% { opacity: 0; transform: translateY(-20px); visibility: hidden; }
     }
 
-    /* --- Layout --- */
+    /* --- Layout Base --- */
     .main { display: flex; height: 100vh; width: 100vw; opacity: 0; transition: 2s; position: relative; z-index: 1;}
     
-    .left { 
+    /* --- PC Layout (Default) --- */
+    .main.pc-layout { flex-direction: row; }
+    .main.pc-layout .left { 
       width: 40%; height: 100%; 
-      background: transparent; 
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 20px;
     }
-    .right { 
-      width: 60%; height: 100%; display: flex; align-items: center; justify-content: center; 
-      padding: 40px 60px; text-align: center; overflow-y: auto;
-      background: transparent;
-      position: relative;
+    .main.pc-layout .right { 
+      width: 60%; height: 100%; 
+      display: flex; align-items: center; justify-content: center; 
+      padding: 40px 60px;
+    }
+
+    /* --- Phone Layout (Stacked) --- */
+    .main.phone-layout { flex-direction: column; }
+    
+    /* Poem on TOP for visibility */
+    .main.phone-layout .right { 
+      width: 100%; height: 60%; 
+      order: 1; 
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    
+    /* Controls on BOTTOM for thumb reach */
+    .main.phone-layout .left { 
+      width: 100%; height: 40%; 
+      order: 2; 
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding-bottom: 40px; /* Space for safe area */
+      /* Add a subtle gradient background to controls only on mobile for readability */
+      background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
     }
 
     /* --- Reel & Text Visibility --- */
@@ -202,6 +228,12 @@
       filter: drop-shadow(0 2px 2px black);
       white-space: pre-wrap;
     }
+    /* Mobile specific font size adj */
+    .main.phone-layout .poem-out {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+        padding: 20px;
+    }
+
     .poem-out.active { 
       opacity: 1; 
       background: transparent !important; 
@@ -243,21 +275,23 @@
 <div id="blueFollowerContainer"><div id="lFollow" style="width:100%; height:100%;"></div></div>
 
 <!-- NATIVE VIDEO PLAYER (Highest Quality) -->
-<!-- Added extra playsinline attributes for broad mobile support -->
 <video id="bgVideo" playsinline webkit-playsinline x5-playsinline muted loop preload="auto">
     <!-- Source set via JS -->
 </video>
 <div class="video-overlay"></div>
 
 <div id="loader">
-  <button id="beginBtn">Begin Experience</button>
-  <div id="statusText" class="loading-status">Connecting to High-Res Stream...</div>
+  <div id="modeSelection">
+      <button id="btnPhone" class="mode-btn">Phone</button>
+      <button id="btnPC" class="mode-btn">PC</button>
+  </div>
+  <div id="statusText" class="loading-status">Loading High-Res Stream...</div>
   <div id="lText" class="loader-text">
     "The ocean drifts like endless tides across quiet skies, soft currents carrying whispers of hidden worlds... In the endless sky, ocean and ember bloom together, vivid and alive."
   </div>
 </div>
 
-<div class="main" id="main">
+<div class="main pc-layout" id="main"> <!-- Default class, JS will update -->
   <div class="left">
     <div class="jackpot-box"><div class="reel" id="reel"></div></div>
     <div class="shuffle-wrapper">
@@ -279,7 +313,6 @@
 
 <script>
   // --- CONFIGURATION ---
-  // Updated with your Dropbox Link (using raw=1 for streaming)
   const HIGH_RES_VIDEO_URL = "https://www.dropbox.com/scl/fi/p10ag7e1we5jpfd9u0ht4/forest.mp4?rlkey=uspja02o7gaxd9c6vnwdcqjpe&st=vtxqdqaz&raw=1"; 
   
   function showError(msg) {
@@ -292,29 +325,29 @@
 
   // --- 1. Native Video Logic ---
   const video = document.getElementById('bgVideo');
-  const beginBtn = document.getElementById('beginBtn');
+  const modeSelection = document.getElementById('modeSelection');
   const statusText = document.getElementById('statusText');
 
   video.src = HIGH_RES_VIDEO_URL;
 
-  // Wait for video data to ensure quality playback
+  // Wait for video data
   video.addEventListener('canplay', () => {
     console.log("Video ready to play");
-    statusText.innerText = "Environment Ready";
-    beginBtn.classList.add('ready');
+    statusText.innerText = "Select Your Device";
+    modeSelection.classList.add('ready');
   });
 
-  // Fallback if video takes too long (so user isn't stuck)
+  // Fallback
   setTimeout(() => {
-      if(!beginBtn.classList.contains('ready')) {
-          statusText.innerText = "Click to Start";
-          beginBtn.classList.add('ready');
+      if(!modeSelection.classList.contains('ready')) {
+          statusText.innerText = "Select Device (Stream Buffering)";
+          modeSelection.classList.add('ready');
       }
   }, 4000);
 
-  // --- 2. Begin Experience ---
-  beginBtn.onclick = function() {
-    // FORCE FULLSCREEN: This makes the browser go fullscreen (hiding URL bar)
+  // --- 2. Mode Selection & Experience Start ---
+  function startExperience(mode) {
+    // 1. Force Fullscreen (Especially for Phone mode)
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
       elem.requestFullscreen().catch(err => console.log("Fullscreen denied:", err));
@@ -324,8 +357,19 @@
       elem.msRequestFullscreen();
     }
 
-    this.style.opacity = '0';
-    this.style.pointerEvents = 'none';
+    // 2. Set Layout Class
+    const mainEl = document.getElementById('main');
+    mainEl.classList.remove('pc-layout'); // Remove default
+    
+    if (mode === 'phone') {
+        mainEl.classList.add('phone-layout');
+    } else {
+        mainEl.classList.add('pc-layout');
+    }
+
+    // 3. UI Transition
+    modeSelection.style.opacity = '0';
+    modeSelection.style.pointerEvents = 'none';
     statusText.style.display = 'none';
     
     const text = document.getElementById('lText');
@@ -336,25 +380,26 @@
     updateTrack();
     toggleMusic(true);
     
-    // Play Video (User Interaction Required for Mobile)
+    // Play Video
     video.play().then(() => {
-        // Video playing smoothly
         video.style.opacity = '1';
     }).catch(err => {
         console.warn("Video play error:", err);
-        // Ensure background is visible even if video fails
         video.style.opacity = '1'; 
     });
 
     setTimeout(() => {
-      document.getElementById('loader').style.opacity = '0'; // Fade out loader
-      setTimeout(() => document.getElementById('loader').style.display = 'none', 1000); // Remove from DOM
+      document.getElementById('loader').style.opacity = '0'; 
+      setTimeout(() => document.getElementById('loader').style.display = 'none', 1000);
       
       document.getElementById('main').style.opacity = '1';
       document.getElementById('blueFollowerContainer').style.opacity = '1'; 
       document.getElementById('redButterflyContainer').style.opacity = '1';
     }, 10000);
-  };
+  }
+
+  document.getElementById('btnPhone').onclick = () => startExperience('phone');
+  document.getElementById('btnPC').onclick = () => startExperience('pc');
 
   // --- Lottie & Other Assets ---
   let followAnim, redAnim;
