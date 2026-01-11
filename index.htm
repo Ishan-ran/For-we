@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>The Infinite Verse</title>
   
   <!-- Load Fonts -->
@@ -14,35 +14,48 @@
     :root {
       /* --- PALETTE: RED, BLUE, PURPLE, BLACK --- */
       --deep-black: #000000;
-      /* Removed --glass-black as it's no longer used for the poem box */
       
       /* Vibrant shades for accents */
       --neon-blue: #60a5fa;
       --neon-purple: #c084fc;
       --neon-red: #f87171;
+      --gold: #fbbf24;
       
       /* Gradient for the reel text */
       --sunset-gradient: linear-gradient(to bottom, var(--neon-blue), var(--neon-purple), var(--neon-red));
+      --legendary-gradient: linear-gradient(to bottom, var(--gold), var(--neon-purple), var(--gold));
     }
 
     * { box-sizing: border-box; }
     
     body, html { 
       margin: 0; padding: 0; height: 100%; width: 100%; 
-      background: transparent; 
-      /* Base text color: Pale Blue for readability */
+      background: #000; /* Deep black fallback */
       color: #e0f2fe; 
       font-family: 'Poppins', sans-serif; 
       overflow: hidden; cursor: crosshair; 
+      overscroll-behavior: none;
     }
 
-    /* --- Video Background --- */
+    /* --- Native Video Background (Dropbox Ready) --- */
     #bgVideo {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      z-index: 0; object-fit: cover; pointer-events: none;
-      opacity: 0; transition: opacity 2s ease-in;
-      background: radial-gradient(circle at center, #1e1b4b 0%, #000000 100%);
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; 
+      height: 100vh;
+      /* Ensures the video covers the screen like a wallpaper */
+      object-fit: cover; 
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0; 
+      transition: opacity 2.5s ease-in;
+    }
+
+    /* Overlay to darken video slightly so text pops */
+    .video-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.2); /* Slight tint for readability */
+      z-index: 0; pointer-events: none;
     }
 
     /* --- Error Notification --- */
@@ -59,6 +72,7 @@
       position: fixed; inset: 0; background: var(--deep-black); z-index: 2000;
       display: flex; align-items: center; justify-content: center; 
       flex-direction: column; text-align: center; padding: 40px;
+      transition: opacity 1s ease-out;
     }
     #beginBtn { 
       padding: 15px 40px; 
@@ -68,12 +82,26 @@
       cursor: pointer; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;
       transition: all 0.3s;
       box-shadow: 0 0 15px rgba(192, 132, 252, 0.2);
+      /* Initially hidden until video is ready */
+      opacity: 0; pointer-events: none; transform: translateY(20px);
+    }
+    #beginBtn.ready {
+      opacity: 1; pointer-events: auto; transform: translateY(0);
     }
     #beginBtn:hover { 
       background: var(--neon-purple); 
       color: black;
       box-shadow: 0 0 30px var(--neon-purple);
       transform: scale(1.05); 
+    }
+    
+    .loading-status {
+        margin-top: 20px;
+        color: var(--neon-blue);
+        font-size: 12px;
+        opacity: 0.7;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
     
     .loader-text {
@@ -102,13 +130,13 @@
       width: 60%; height: 100%; display: flex; align-items: center; justify-content: center; 
       padding: 40px 60px; text-align: center; overflow-y: auto;
       background: transparent;
+      position: relative;
     }
 
     /* --- Reel & Text Visibility --- */
     .jackpot-box { 
       width: 100%; height: 350px; overflow: hidden; position: relative; 
       background: transparent;
-      /* Masking ensures it fades out top/bottom cleanly */
       mask-image: linear-gradient(transparent, black 20%, black 80%, transparent); 
       -webkit-mask-image: linear-gradient(transparent, black 20%, black 80%, transparent); 
     }
@@ -118,25 +146,30 @@
       height: 70px; display: flex; align-items: center; justify-content: center; 
       font-weight: 800; text-transform: uppercase; letter-spacing: 4px; 
       font-size: 14px; 
-      /* Gradient text */
       background: var(--sunset-gradient);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      /* STRONG shadow to make text visible over any background */
       filter: drop-shadow(0px 2px 0px rgba(0,0,0,1));
+      transition: opacity 0.3s;
     }
     
-    .shuffle-wrapper { position: relative; margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+    .reel.spinning .item {
+        background: linear-gradient(to bottom, #fff, var(--neon-blue), #fff);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        opacity: 0.7;
+    }
+
+    .shuffle-wrapper { position: relative; margin-top: 40px; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     
     .btn { 
       padding: 12px 25px; 
-      background: rgba(0, 0, 0, 0.5); /* Semi-transparent black button bg */
+      background: rgba(0, 0, 0, 0.5); 
       color: var(--neon-blue); 
       border: 1px solid var(--neon-purple); 
       cursor: pointer; letter-spacing: 2px; transition: 0.25s; text-transform: uppercase; 
       font-size: 11px; font-weight: bold; 
       backdrop-filter: blur(4px);
     }
-    .btn:hover { 
+    .btn:hover, .btn.active { 
       background: var(--neon-red); 
       color: black; 
       border-color: var(--neon-red);
@@ -153,28 +186,50 @@
       top: 0; left: 0; will-change: transform; opacity: 0; transition: opacity 2s; 
     }
 
-    .controls { display:flex; gap:10px; margin-top:10px;}
+    .controls { display:flex; gap:10px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 300px; }
 
     /* --- Poem Output (The Main Event) --- */
     .poem-out {
       font-family: 'Great Vibes', cursive; font-size: clamp(2rem, 4.5vw, 3rem); 
-      opacity: 0; transition: 1.5s ease-in-out; line-height: 1.4;
-      /* Idle state: decorative gradient */
+      opacity: 0; transition: opacity 0.5s ease; line-height: 1.4;
       background: var(--sunset-gradient);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-size: 200%;
       animation: metal 8s linear infinite;
-      /* Drop shadow for idle state */
       filter: drop-shadow(0 2px 2px black);
+      white-space: pre-wrap;
     }
     .poem-out.active { 
       opacity: 1; 
-      /* Active state: Removed the box, kept the text clean */
       background: transparent !important; 
       -webkit-background-clip: unset; -webkit-text-fill-color: unset;
       color: #fff; /* White text for max contrast */
       display: inline-block;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5); /* Deep shadow for visibility */
+      text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5);
     }
+
+    /* Legendary Styling (Purple Poems) */
+    .poem-out.legendary {
+        background: var(--legendary-gradient) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        text-shadow: 0 0 20px rgba(192, 132, 252, 0.6), 0 2px 5px black !important;
+        filter: drop-shadow(0 0 5px var(--gold));
+    }
+
+    /* Particles */
+    .particle {
+        position: absolute;
+        width: 6px; height: 6px;
+        background: var(--gold);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 100;
+    }
+    @keyframes explode {
+        0% { transform: translate(0,0) scale(1); opacity: 1; }
+        100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+    }
+
     @keyframes metal { to { background-position: 200% center; } }
   </style>
 </head>
@@ -183,12 +238,15 @@
 <div id="errorMsg">Error Loading Files. Check Console (F12).</div>
 <div id="blueFollowerContainer"><div id="lFollow" style="width:100%; height:100%;"></div></div>
 
+<!-- NATIVE VIDEO PLAYER (Highest Quality) -->
 <video id="bgVideo" playsinline muted loop preload="auto">
-  <source src="forest.mp4" type="video/mp4">
+    <!-- Source set via JS -->
 </video>
+<div class="video-overlay"></div>
 
 <div id="loader">
   <button id="beginBtn">Begin Experience</button>
+  <div id="statusText" class="loading-status">Connecting to High-Res Stream...</div>
   <div id="lText" class="loader-text">
     "The ocean drifts like endless tides across quiet skies, soft currents carrying whispers of hidden worlds... In the endless sky, ocean and ember bloom together, vivid and alive."
   </div>
@@ -199,9 +257,12 @@
     <div class="jackpot-box"><div class="reel" id="reel"></div></div>
     <div class="shuffle-wrapper">
         <button class="btn" style="width:220px;" onclick="shuffle()">Shuffle Reel</button>
+        <button class="btn" id="zenBtn" style="width:220px;" onclick="toggleZenMode()">Zen Mode: Off</button>
+        
         <div class="controls">
-            <button class="btn" onclick="prevSong()">Prev Song</button>
-            <button class="btn" onclick="nextSong()">Next Song</button>
+            <button class="btn" id="musicToggleBtn" onclick="toggleMusic()">Music: Off</button>
+            <button class="btn" onclick="prevSong()">Prev</button>
+            <button class="btn" onclick="nextSong()">Next</button>
         </div>
         <div id="redButterflyContainer"><div id="lRed" style="width:100%; height:100%;"></div></div>
     </div>
@@ -212,6 +273,10 @@
 <audio id="player"></audio>
 
 <script>
+  // --- CONFIGURATION ---
+  // Updated with your Dropbox Link (using raw=1 for streaming)
+  const HIGH_RES_VIDEO_URL = "https://www.dropbox.com/scl/fi/p10ag7e1we5jpfd9u0ht4/forest.mp4?rlkey=uspja02o7gaxd9c6vnwdcqjpe&st=vtxqdqaz&raw=1"; 
+  
   function showError(msg) {
     console.error(msg);
     const errBox = document.getElementById('errorMsg');
@@ -220,6 +285,63 @@
     setTimeout(() => errBox.style.display = 'none', 5000);
   }
 
+  // --- 1. Native Video Logic ---
+  const video = document.getElementById('bgVideo');
+  const beginBtn = document.getElementById('beginBtn');
+  const statusText = document.getElementById('statusText');
+
+  video.src = HIGH_RES_VIDEO_URL;
+
+  // Wait for video data to ensure quality playback
+  video.addEventListener('canplay', () => {
+    console.log("Video ready to play");
+    statusText.innerText = "Environment Ready";
+    beginBtn.classList.add('ready');
+  });
+
+  // Fallback if video takes too long (so user isn't stuck)
+  setTimeout(() => {
+      if(!beginBtn.classList.contains('ready')) {
+          statusText.innerText = "Click to Start";
+          beginBtn.classList.add('ready');
+      }
+  }, 4000);
+
+  // --- 2. Begin Experience ---
+  beginBtn.onclick = function() {
+    this.style.opacity = '0';
+    this.style.pointerEvents = 'none';
+    statusText.style.display = 'none';
+    
+    const text = document.getElementById('lText');
+    text.style.display = 'block';
+    text.style.animation = 'cinematicFade 10s forwards ease-in-out';
+    
+    // Play Audio
+    updateTrack();
+    toggleMusic(true);
+    
+    // Play Video (User Interaction Required for Mobile)
+    video.play().then(() => {
+        // Video playing smoothly
+        video.style.opacity = '1';
+    }).catch(err => {
+        console.warn("Video play error:", err);
+        // Ensure background is visible even if video fails
+        video.style.opacity = '1'; 
+    });
+
+    setTimeout(() => {
+      document.getElementById('loader').style.opacity = '0'; // Fade out loader
+      setTimeout(() => document.getElementById('loader').style.display = 'none', 1000); // Remove from DOM
+      
+      document.getElementById('main').style.opacity = '1';
+      document.getElementById('blueFollowerContainer').style.opacity = '1'; 
+      document.getElementById('redButterflyContainer').style.opacity = '1';
+    }, 10000);
+  };
+
+  // --- Lottie & Other Assets ---
   let followAnim, redAnim;
 
   try {
@@ -239,27 +361,7 @@
   } catch(e) { showError("Error initializing Red Butterfly"); }
 
 
-  const video = document.getElementById('bgVideo');
-  document.getElementById('beginBtn').onclick = function() {
-    this.style.display = 'none';
-    const text = document.getElementById('lText');
-    text.style.display = 'block';
-    text.style.animation = 'cinematicFade 10s forwards ease-in-out';
-    updateTrack();
-    
-    video.play().catch(e => {
-      video.style.opacity = '1';
-    });
-
-    setTimeout(() => {
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('main').style.opacity = '1';
-      video.style.opacity = '1';
-      document.getElementById('blueFollowerContainer').style.opacity = '1'; 
-      document.getElementById('redButterflyContainer').style.opacity = '1';
-    }, 10000);
-  };
-
+  // --- Poems Data (All 128 Poems) ---
   const poems = [
     // --- PART I: THE BLUE MOVEMENT (97 Poems) ---
     { title: "Blue, Remaining", text: "You stay where moments usually leave,<br>Lingering longer than they believe.<br>The air shifts slower when you’re near,<br>As if time learns patience here." },
@@ -399,11 +501,28 @@
   
   const tracks = ['s1.mp3', 's2.mp3', 's3.mp3', 's4.mp3', 's5.mp3', 's6.mp3', 's7.mp3', 's8.mp3'];
   let trackIdx = 0; 
+  let isPlaying = false;
   const player = document.getElementById('player');
   
   function updateTrack() { 
     player.src = tracks[trackIdx]; 
-    player.play().catch(e => console.log("Audio waiting")); 
+    if(isPlaying) player.play().catch(e => console.log("Audio waiting")); 
+  }
+  
+  function toggleMusic(forcePlay = false) {
+      if (forcePlay) {
+          isPlaying = true;
+          player.play();
+      } else {
+          if (player.paused) {
+              player.play();
+              isPlaying = true;
+          } else {
+              player.pause();
+              isPlaying = false;
+          }
+      }
+      document.getElementById('musicToggleBtn').innerText = isPlaying ? "Music: On" : "Music: Pause";
   }
   
   function nextSong() { trackIdx = (trackIdx + 1) % tracks.length; updateTrack(); }
@@ -416,17 +535,139 @@
 
   function shuffle() {
     if(spinning) return; spinning = true;
+    
+    // 1. Change reel text color while spinning
+    reel.classList.add('spinning');
+    
     const stopIdx = Math.floor(Math.random() * (list.length - 20)) + 10;
     const offset = stopIdx * 70;
     reel.style.transition = 'transform 6s cubic-bezier(0.16, 1, 0.3, 1)';
     reel.style.transform = `translateY(-${offset}px)`;
-    document.getElementById('poemOut').classList.remove('active');
+    
+    const poemEl = document.getElementById('poemOut');
+    poemEl.classList.remove('active', 'legendary');
+    poemEl.innerHTML = ""; // Clear for typewriter
     
     setTimeout(() => {
-      document.getElementById('poemOut').innerHTML = list[stopIdx].text;
-      document.getElementById('poemOut').classList.add('active');
+      // Stop spinning visuals
+      reel.classList.remove('spinning');
+      reel.style.transition = 'none'; // reset pos invisible
+      
+      const poem = list[stopIdx];
+      const isLegendary = poem.title.startsWith("Purple");
+      
+      // Particle Explosion if Legendary
+      if(isLegendary) {
+          poemEl.classList.add('legendary');
+          createParticles(window.innerWidth / 2 + 300, window.innerHeight / 2);
+      }
+      
+      poemEl.classList.add('active');
+      typewriter(poem.text, poemEl);
+      
       spinning = false;
     }, 6000);
+  }
+  
+  function typewriter(html, element) {
+      // A simple HTML-aware typewriter
+      // We'll strip tags for typing logic or just render raw HTML if simple
+      // Since poems use <br>, let's just fade text in to keep <br> working easily
+      // OR better: Type plain text. The user poems use <br>.
+      // Let's use a fade-in word by word or letter for "reveal" effect.
+      // Simpler approach for HTML content:
+      element.innerHTML = html;
+      element.style.opacity = 0;
+      let opacity = 0;
+      const fadeInt = setInterval(() => {
+          opacity += 0.05;
+          element.style.opacity = opacity;
+          if(opacity >= 1) clearInterval(fadeInt);
+      }, 50);
+  }
+
+  // Override typewriter with actual character reveal for cleaner text
+  function typewriter(htmlText, element) {
+      element.innerHTML = "";
+      element.style.opacity = 1;
+      
+      // Temporary container to parse HTML
+      let temp = document.createElement('div');
+      temp.innerHTML = htmlText;
+      let nodes = Array.from(temp.childNodes);
+      
+      let cursor = 0;
+      
+      function typeNode() {
+          if(cursor >= nodes.length) return;
+          let node = nodes[cursor];
+          
+          if(node.nodeType === 3) { // Text node
+              let text = node.textContent;
+              let i = 0;
+              let span = document.createElement('span');
+              element.appendChild(span);
+              
+              let timer = setInterval(() => {
+                  span.textContent += text[i];
+                  i++;
+                  if(i >= text.length) {
+                      clearInterval(timer);
+                      cursor++;
+                      typeNode();
+                  }
+              }, 30); // Speed
+          } else {
+              // Element node (likely <br>)
+              element.appendChild(node.cloneNode(true));
+              cursor++;
+              setTimeout(typeNode, 100); // Slight pause at line break
+          }
+      }
+      typeNode();
+  }
+
+  function createParticles(x, y) {
+      for(let i=0; i<40; i++) {
+          let p = document.createElement('div');
+          p.className = 'particle';
+          document.body.appendChild(p);
+          
+          let angle = Math.random() * Math.PI * 2;
+          let velocity = Math.random() * 150 + 50;
+          let tx = Math.cos(angle) * velocity + 'px';
+          let ty = Math.sin(angle) * velocity + 'px';
+          
+          p.style.left = x + 'px';
+          p.style.top = y + 'px';
+          p.style.setProperty('--tx', tx);
+          p.style.setProperty('--ty', ty);
+          
+          p.style.animation = `explode 1s ease-out forwards`;
+          
+          setTimeout(() => p.remove(), 1000);
+      }
+  }
+  
+  // Zen Mode Logic
+  let zenInterval;
+  let isZen = false;
+  function toggleZenMode() {
+      const btn = document.getElementById('zenBtn');
+      if(isZen) {
+          clearInterval(zenInterval);
+          btn.innerText = "Zen Mode: Off";
+          btn.classList.remove('active');
+          isZen = false;
+      } else {
+          shuffle(); // Start immediately
+          zenInterval = setInterval(() => {
+              if(!spinning) shuffle();
+          }, 15000);
+          btn.innerText = "Zen Mode: On";
+          btn.classList.add('active');
+          isZen = true;
+      }
   }
 
   const bFollow = document.getElementById('blueFollowerContainer');
