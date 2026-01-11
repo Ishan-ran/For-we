@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <!-- Added viewport-fit=cover for full immersion on notched phones -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>The Infinite Verse</title>
   
   <!-- Load Fonts -->
@@ -49,6 +50,9 @@
       pointer-events: none;
       opacity: 0; 
       transition: opacity 2.5s ease-in;
+      /* Hardware acceleration to reduce lag */
+      transform: translateZ(0);
+      backface-visibility: hidden;
     }
 
     /* Overlay to darken video slightly so text pops */
@@ -239,7 +243,8 @@
 <div id="blueFollowerContainer"><div id="lFollow" style="width:100%; height:100%;"></div></div>
 
 <!-- NATIVE VIDEO PLAYER (Highest Quality) -->
-<video id="bgVideo" playsinline muted loop preload="auto">
+<!-- Added extra playsinline attributes for broad mobile support -->
+<video id="bgVideo" playsinline webkit-playsinline x5-playsinline muted loop preload="auto">
     <!-- Source set via JS -->
 </video>
 <div class="video-overlay"></div>
@@ -309,6 +314,16 @@
 
   // --- 2. Begin Experience ---
   beginBtn.onclick = function() {
+    // FORCE FULLSCREEN
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen().catch(err => console.log("Fullscreen denied:", err));
+    } else if (elem.webkitRequestFullscreen) { /* Safari */
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) { /* IE11 */
+      elem.msRequestFullscreen();
+    }
+
     this.style.opacity = '0';
     this.style.pointerEvents = 'none';
     statusText.style.display = 'none';
