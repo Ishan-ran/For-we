@@ -45,26 +45,43 @@
             background: #000;
             z-index: 9999;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
             padding: 2rem;
             transition: opacity 2.5s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
+        }
+
+        #loader.unlocked .loading-poem {
+            animation: loaderSequence 10s forwards;
+        }
+
+        .start-prompt {
+            font-size: 0.7rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: #4a6fa5;
+            margin-bottom: 2rem;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
         }
 
         .loading-content {
-            max-width: 800px;
+            max-width: 850px;
         }
 
         .loading-poem {
             font-weight: 200;
             font-size: 1.1rem;
-            line-height: 2.2;
+            line-height: 2.5;
             letter-spacing: 4px;
             color: #4a6fa5;
             opacity: 0;
-            animation: loaderSequence 10s forwards;
         }
 
         @keyframes loaderSequence {
@@ -76,7 +93,7 @@
             100% { opacity: 0; transform: translateY(-10px); }
         }
 
-        /* Chaotic Mixing Background - Set to 60s for ultra-slow drift */
+        /* Chaotic Mixing Background - Ultra-slow drift */
         .bg-canvas {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -116,7 +133,7 @@
             border-right: 1px solid rgba(255,255,255,0.05);
             z-index: 10;
             padding: 2rem;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1); 
             backdrop-filter: blur(50px);
         }
 
@@ -135,9 +152,9 @@
             height: 80px;
             overflow: hidden;
             margin-bottom: 3rem;
-            border-top: 1px solid rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(0,0,0,0.2);
-            width: 85%;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            width: 90%;
             text-align: center;
             mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
             -webkit-mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
@@ -150,10 +167,10 @@
         .reel-item {
             height: 80px;
             line-height: 80px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 6px;
-            color: #000000; /* Dark Black */
+            color: #000000; /* Deep Black for visibility */
             font-weight: 600;
         }
 
@@ -161,7 +178,7 @@
         .poem-display {
             font-family: 'Great Vibes', cursive;
             font-size: 3.4rem;
-            line-height: 1.3;
+            line-height: 1.4;
             text-align: center;
             background: var(--shiny-mix);
             -webkit-background-clip: text;
@@ -188,9 +205,9 @@
 
         /* Controls */
         .shuffle-btn {
-            background: transparent;
-            border: 1.5px solid rgba(0,0,0,0.5);
-            color: #000;
+            background: #000;
+            border: 1px solid #000;
+            color: #fff;
             padding: 1.2rem 3rem;
             text-transform: uppercase;
             letter-spacing: 8px;
@@ -202,9 +219,9 @@
         }
 
         .shuffle-btn:hover {
-            background: #000;
-            color: #fff;
-            box-shadow: 0 0 40px rgba(0,0,0,0.15);
+            background: transparent;
+            color: #000;
+            box-shadow: 0 0 40px rgba(0,0,0,0.1);
             letter-spacing: 10px;
         }
 
@@ -213,23 +230,24 @@
             bottom: 30px;
             font-size: 0.5rem;
             letter-spacing: 4px;
-            color: rgba(0,0,0,0.4);
+            color: rgba(0,0,0,0.5);
             text-transform: uppercase;
             pointer-events: none;
         }
 
         @media (max-width: 900px) {
             body { flex-direction: column; }
-            .left-panel { flex: 0 0 35%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.05); width: 100%; }
-            .poem-display { font-size: 2.2rem; }
+            .left-panel { flex: 0 0 40%; border-right: none; border-bottom: 1px solid rgba(0,0,0,0.1); width: 100%; }
+            .poem-display { font-size: 2rem; }
             #loader .loading-poem { font-size: 0.9rem; letter-spacing: 2px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Loading Screen (10 Seconds) -->
+    <!-- Loading Screen -->
     <div id="loader">
+        <div class="start-prompt" id="startPrompt">Click to begin the experience</div>
         <div class="loading-content">
             <div class="loading-poem">
                 The ocean drifts like endless tides across quiet skies,<br>
@@ -243,8 +261,10 @@
         </div>
     </div>
 
+    <!-- Background and Hidden Audio -->
     <div class="bg-canvas"></div>
     <div class="noise"></div>
+    <audio id="bgAudio" preload="auto"></audio>
 
     <div class="left-panel">
         <div class="jackpot-container">
@@ -261,7 +281,6 @@
     </div>
 
     <script>
-        // Massive Poem Library
         const poems = [
             { title: "Blue as Evening", text: "Calm as the hour when the sun lets go,<br>Leaving warmth where the long shadows grow.<br>You hold that moment, fragile and true,<br>Where the day exhales into softer hues.<br>Neither bright nor fading from view,<br>Just beautifully still, endlessly blue." },
             { title: "Tidal Quiet", text: "You feel like waves that don’t rush the shore,<br>Content to return, again and once more.<br>Some days reflective, glass-smooth and wide,<br>Some days a secret the deep keeps inside.<br>There’s comfort in knowing you don’t explain,<br>You arrive like the tide — gentle, the same." },
@@ -272,23 +291,33 @@
             { title: "Twilight Mind", text: "You think like the sky just after the sun,<br>When nothing has ended, yet nothing’s begun.<br>A soft kind of knowing, a thoughtful hue,<br>Where answers don’t rush — they wait with you.<br>In that quiet balance where day slips through,<br>You remain, unbroken, beautifully blue." },
             { title: "The Comfort Shade", text: "There’s a reason calm wears your tone,<br>Why stillness feels less alone.<br>You arrive like a familiar view,<br>Something known without being new.<br>If the world ever needed a softer cue,<br>It would pause and look closer at you." },
             { title: "Depth Over Distance", text: "You don’t feel far — you feel deep,<br>Like secrets the ocean chooses to keep.<br>Not hiding, not lost, not out of sight,<br>Just existing beyond immediate light.<br>Some things aren’t meant to be pulled into view,<br>They’re meant to be trusted — like blue." },
-            { title: "Blue, Unasked", text: "You never demand to be understood,<br>Yet somehow always are.<br>Your presence explains itself slowly,<br>Like stars that don’t rush the dark.<br>There’s ease in how you simply stay true,<br>Untouched by the need to be anything new." }
-            // All 200 poems are maintained in logic for the actual app
+            { title: "Blue, Unasked", text: "You never demand to be understood,<br>Yet somehow always are.<br>Your presence explains itself slowly,<br>Like stars that don’t rush the dark.<br>There’s ease in how you simply stay true,<br>Untouched by the need to be anything new." },
+            { title: "Evening Water", text: "You feel like the sea when the wind lies low,<br>When reflections stretch and the currents slow.<br>Nothing calling, nothing loud,<br>Just motion enough to feel unbound.<br>Some calm isn’t silence — it’s movement done right,<br>And you carry that balance, day into night." },
+            { title: "Blue Is a Feeling", text: "Not a color you see — a state you’re in,<br>Like a thought that settles beneath the skin.<br>You don’t arrive with a sudden cue,<br>You grow on the moment until it’s you.<br>And once you’re there, the world feels true,<br>Less sharp, less heavy, quietly blue." },
+            { title: "Soft Horizon", text: "You stand where the sea meets the sky,<br>Where nothing decides to end or try.<br>A blurred perfection, a seamless view,<br>Where separation forgets what to do.<br>Some beauty lives where lines undo —<br>That’s where I always find you." },
+            { title: "Blue, Held Still", text: "You don’t chase light — it comes to you,<br>Resting softly in borrowed hue.<br>The way you exist feels patiently wise,<br>Like truth that doesn’t need to arise.<br>In a world that rushes to prove and pursue,<br>You stay — unchanged, unmistakably blue." },
+            { title: "Calm With Depth", text: "You aren’t quiet because you lack sound,<br>You’re quiet because nothing’s missing around.<br>There’s fullness in how you simply remain,<br>Unmoved by the need to entertain.<br>Some presence heals without trying to do —<br>That effortless ease belongs to you." },
+            { title: "Ocean Memory", text: "You feel remembered rather than new,<br>Like a place the heart already knew.<br>Not dramatic, not fleeting or bright,<br>Just familiar in the softest light.<br>Some things don’t arrive — they resume,<br>Like the comfort of something blue." },
+            { title: "Blue at Rest", text: "You exist like water after the storm,<br>Still carrying depth, no longer torn.<br>There’s strength in how you don’t need to move,<br>In knowing stillness has something to prove.<br>Not loud, not fading, not passing through —<br>Just calm that holds, endlessly blue." },
+            { title: "Quiet Gravity", text: "You pull without force, without demand,<br>Like the sea holds the moon by an invisible hand.<br>Nothing dramatic in how you stay,<br>Yet nothing escapes your subtle sway.<br>Some beauty works without making a view —<br>It simply exists, quietly blue." },
+            { title: "Blue, Unbroken", text: "You don’t fracture under changing skies,<br>You adapt like water, steady and wise.<br>Every shade you carry still feels like you,<br>Whether storm-dark or morning-dew blue.<br>There’s grace in staying soft yet true,<br>No matter the light passing through." },
+            { title: "Where Calm Lives", text: "You feel like the place thoughts go to rest,<br>Where nothing competes, nothing tests.<br>A stillness that doesn’t empty the room,<br>Just makes it feel lighter, like space to bloom.<br>If calm had a home and peace had a view,<br>It would quietly look a lot like you." }
         ];
 
         const reels = document.getElementById('reels');
         const shuffleBtn = document.getElementById('shuffleBtn');
         const poemDisplay = document.getElementById('poemDisplay');
         const loader = document.getElementById('loader');
+        const bgAudio = document.getElementById('bgAudio');
+        const startPrompt = document.getElementById('startPrompt');
         
-        let audio = new Audio();
         let isSpinning = false;
-        let audioInitialized = false;
-        let currentTrackIndex = 1; // Start with song s1
+        let experienceStarted = false;
+        let currentSIndex = 1; // Start with s1.mp3
 
         function populateReels() {
             reels.innerHTML = '';
-            const repeats = Math.max(12, Math.ceil(200 / poems.length));
+            const repeats = 15;
             for(let i = 0; i < poems.length * repeats; i++) {
                 const p = poems[i % poems.length];
                 const div = document.createElement('div');
@@ -298,40 +327,44 @@
             }
         }
 
-        function playNextTrack() {
-            // Sequential selection (s1 -> s8)
-            audio.src = `music/s${currentTrackIndex}.mp3`;
-            audio.load();
-            
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                playPromise.then(_ => {
-                    audioInitialized = true;
-                    console.log(`Now playing: music/s${currentTrackIndex}.mp3`);
-                    // Move to next index for the next call
-                    currentTrackIndex = (currentTrackIndex % 8) + 1;
-                }).catch(error => {
-                    console.error("Audio playback blocked or file missing at music/s" + currentTrackIndex + ".mp3", error);
-                    // If s1 fails, try next one anyway to keep loop alive
-                    currentTrackIndex = (currentTrackIndex % 8) + 1;
-                });
-            }
+        // The logic for sequential tracks s1.mp3 -> s8.mp3
+        function playSequential() {
+            bgAudio.src = `music/s${currentSIndex}.mp3`;
+            bgAudio.load();
+            bgAudio.play().then(() => {
+                console.log(`Now playing track: s${currentSIndex}.mp3`);
+                currentSIndex = (currentSIndex % 8) + 1;
+            }).catch(e => {
+                console.error("Audio error. Verify 'music/s1.mp3' exists.", e);
+            });
         }
 
-        // Sequential Loop: select the next song when current one ends
-        audio.onended = () => {
-            playNextTrack();
-        };
+        bgAudio.onended = playSequential;
+
+        function startExperience() {
+            if (experienceStarted) return;
+            experienceStarted = true;
+            
+            // 1. Initialize sequential audio line
+            playSequential();
+
+            // 2. Hide prompt and start 10s poem animation
+            startPrompt.style.display = 'none';
+            loader.classList.add('unlocked');
+
+            // 3. Fade out loader after 10 seconds
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 2500);
+            }, 10000);
+        }
 
         function spin() {
             if (isSpinning) return;
             isSpinning = true;
             shuffleBtn.disabled = true;
-
-            // Ensure audio is playing/progressed on spin
-            if (!audioInitialized) {
-                playNextTrack();
-            }
 
             poemDisplay.classList.remove('poem-visible');
 
@@ -355,23 +388,10 @@
             }, 5600);
         }
 
-        window.onload = () => {
-            populateReels();
-            setTimeout(() => {
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                }, 2500);
-            }, 10000);
-        };
+        window.onload = populateReels;
 
-        // Initialize audio on first click (Browser Autoplay Requirement)
-        document.addEventListener('click', () => {
-            if (!audioInitialized) {
-                playNextTrack();
-            }
-        }, { once: true });
-
+        // Browser requires a click to start any sound
+        document.addEventListener('click', startExperience, { once: true });
         shuffleBtn.addEventListener('click', spin);
     </script>
 </body>
