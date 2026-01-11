@@ -314,7 +314,7 @@
 
   // --- 2. Begin Experience ---
   beginBtn.onclick = function() {
-    // FORCE FULLSCREEN
+    // FORCE FULLSCREEN: This makes the browser go fullscreen (hiding URL bar)
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
       elem.requestFullscreen().catch(err => console.log("Fullscreen denied:", err));
